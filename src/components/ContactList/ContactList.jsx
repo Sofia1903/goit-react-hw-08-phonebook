@@ -1,42 +1,47 @@
+import { getFilterValue } from 'redux/filterSlice';
+import { Button } from '../Common.styled';
+import { List, ListItem } from './ContactList.styled';
 import { useDispatch, useSelector } from 'react-redux';
-import { delContact } from 'redux/contacts/operations';
-import { getContacts, getFilter } from 'redux/contacts/selectors';
-import css from './ContactList.module.css';
+import { getContacts } from 'redux/contactsSlice';
+import { useEffect } from 'react';
+import { deleteContact, fetchContacts } from 'redux/operations';
 
-const getVisibleContacts = (contacts, filter) => {
-  if (!filter) {
-    return contacts;
-  } else {
-    return contacts.filter(contact => {
-      return contact.name.toLowerCase().includes(filter.toLowerCase());
-    });
-  }
-};
-
-export const ContactList = () => {
-  const contacts = useSelector(getContacts);
-  const filter = useSelector(getFilter);
-  const visibleContacts = getVisibleContacts(contacts, filter);
-
+const ContactList = () => {
+  const contactsRedux = useSelector(getContacts);
+  const filterValue = useSelector(getFilterValue);
   const dispatch = useDispatch();
-  const handleDelete = id => dispatch(delContact(id));
+
+  useEffect(() => {
+    dispatch(fetchContacts());
+  }, [dispatch]);
+
+  const getFilteredContacts = () => {
+    if (!contactsRedux) {
+      return;
+    }
+    return contactsRedux.filter(contact =>
+      contact.name.toLowerCase().includes(filterValue.toLowerCase()),
+    );
+  };
 
   return (
-    <div className={css.wraperContactList}>
-      <ul className={css.contactList}>
-        {visibleContacts.map((contact, id) => (
-          <li key={id} className={css.contactListItem}>
-            {contact.name}: {contact.number}
-            <button
+    <List>
+      {getFilteredContacts().map(({ name, id, phone }) => {
+        return (
+          <ListItem key={id}>
+            {name}: {phone}
+            <Button
               type="button"
-              className={css.contactListItemBtn}
-              onClick={() => handleDelete(contact.id)}
+              onClick={() => dispatch(deleteContact(id))}
+              buttonListStyle={'margin-left: 10px'}
             >
               Delete
-            </button>
-          </li>
-        ))}
-      </ul>
-    </div>
+            </Button>
+          </ListItem>
+        );
+      })}
+    </List>
   );
 };
+
+export default ContactList;
